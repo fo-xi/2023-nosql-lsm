@@ -4,36 +4,33 @@ import ru.vk.itmo.Dao;
 import ru.vk.itmo.Entry;
 
 import java.lang.foreign.MemorySegment;
-import java.util.Collection;
-import java.util.Comparator;
 import java.util.Iterator;
+import java.util.SortedMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
 public class InMemoryDao implements Dao<MemorySegment, Entry<MemorySegment>> {
 
-    private final Comparator<MemorySegment> comparator = new MemorySegmentComparator();
-
     private final ConcurrentNavigableMap<MemorySegment, Entry<MemorySegment>> storage;
 
     public InMemoryDao() {
-        storage = new ConcurrentSkipListMap<>(comparator);
+        storage = new ConcurrentSkipListMap<>(new MemorySegmentComparator());
     }
 
     @Override
     public Iterator<Entry<MemorySegment>> get(MemorySegment from, MemorySegment to) {
-        Collection<Entry<MemorySegment>> values;
+        SortedMap<MemorySegment, Entry<MemorySegment>> subMap;
         if (from == null && to == null) {
-            values = storage.values();
+            subMap = storage;
         } else if (from == null) {
-            values = storage.headMap(to).values();
+            subMap = storage.headMap(to);
         } else if (to == null) {
-            values = storage.tailMap(from).values();
+            subMap = storage.tailMap(from);
         } else {
-            values = storage.subMap(from, to).values();
+            subMap = storage.subMap(from, to);
         }
 
-        return values.iterator();
+        return subMap.values().iterator();
     }
 
     @Override
